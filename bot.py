@@ -175,5 +175,11 @@ async def on_ready():
         # Starte Sniper in einem separaten Task, um den Bot nicht zu blockieren
         bot.loop.create_task(sniper.run(bot))
 
+# Hole das Token aus den Umgebungsvariablen
+token = os.getenv('DISCORD_BOT_TOKEN')
+
+if not token:
+    raise ValueError("Kein Token gefunden! Bitte stelle sicher, dass das Token als Umgebungsvariable gesetzt wurde.")
+
 # Starte den Bot
-bot.run("DEIN_DISCORD_BOT_TOKEN")
+bot.run(token)
