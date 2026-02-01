@@ -1,3 +1,4 @@
 discord.py
 tls-client
-aiohttp 
+aiohttp
+typing-extensions
