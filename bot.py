@@ -168,13 +168,17 @@ async def on_ready():
     print(f'Bot ist eingeloggt als {bot.user}')
 
     # Automatisches Starten des Snipers für gespeicherte URLs in allen Channels
+    tasks = []
     for channel_id, data in channels_data.items():
         url = data['url']
         print(f"Starte VintedSniper für Channel ID {channel_id} mit URL {url}")
         sniper = VintedSniper(url, channel_id)
         
-        # Starte Sniper in einem separaten Task, um den Bot nicht zu blockieren
-        bot.loop.create_task(sniper.run(bot))
+        # Starte Sniper in einem separaten Task
+        tasks.append(bot.loop.create_task(sniper.run(bot)))
+
+    # Warten, dass alle Tasks gestartet werden
+    await asyncio.gather(*tasks)
 
 # Starte den Bot
-bot.run(os.getenv("DISCORD_TOKEN"))
+bot.run
