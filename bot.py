@@ -3,8 +3,10 @@ from discord.ext import commands, tasks
 import tls_client
 import time
 import json
+import os
+import asyncio
 
-# Die Datei für die Channels und URLs
+# Datei, die URLs für verschiedene Channels speichert
 CHANNELS_FILE = "channel_urls.json"
 
 # Laden oder Erstellen der Datei für die Channel-URLs
@@ -15,7 +17,7 @@ except FileNotFoundError:
     channels_data = {}
 
 # ==========================================
-# VintedSniper Klasse bleibt unverändert
+# VintedSniper Klasse
 # ==========================================
 class VintedSniper:
     def __init__(self, target_url, channel_id):
@@ -121,6 +123,12 @@ class VintedSniper:
                 print(f"❌ Fehler: {e}")
                 time.sleep(10)
 
+    def fetch_cookie(self):
+        print("[*] Verbindung wird aufgebaut...")
+        try: self.session.get("https://www.vinted.de", headers=self.headers)
+        except: pass
+
+
 # ==========================================
 # Discord Bot Setup
 # ==========================================
@@ -160,4 +168,4 @@ async def startscan(ctx, url: str):
     asyncio.create_task(sniper.run(bot))
 
 # Bot starten
-bot.run('DEIN_DISCORD_BOT_TOKEN')  # Dein Discord Bot Token hier einfügen
+bot.run(os.getenv('DISCORD_TOKEN'))  # Dein Discord Bot Token wird als Umgebungsvariable gesetzt
