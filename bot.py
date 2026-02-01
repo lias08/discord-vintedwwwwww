@@ -72,31 +72,32 @@ class VintedSniper:
         image_urls = [img.get('url', '').replace("/medium/", "/full/") for img in photos if img.get('url')]
         main_img = image_urls[0] if image_urls else ""
 
-        data = {
-            "username": "Vinted Sniper PRO",
-            "embeds": [{
-                "title": f"🔥 {item.get('title')}",
-                "url": item_url,
-                "color": 0x09b1ba,
-                "fields": [
-                    {"name": "💶 Preis", "value": f"**{price_val:.2f} €**", "inline": True},
-                    {"name": "🚚 Gesamt ca.", "value": f"**{total_price:.2f} €**", "inline": True},
-                    {"name": "📏 Größe", "value": item.get('size_title', 'N/A'), "inline": True},
-                    {"name": "🏷️ Marke", "value": brand, "inline": True},
-                    {"name": "✨ Zustand", "value": status, "inline": True},
-                    {"name": "⏰ Gefunden", "value": f"<t:{int(time.time())}:R>", "inline": True},
-                    {"name": "⚡ Aktionen", "value": f"[🛒 Kaufen](https://www.vinted.de/transaction/buy/new?item_id={item_id}) | [💬 Nachricht]({item_url}#message)", "inline": False}
-                ],
-                "image": {"url": main_img},
-                "footer": {"text": "Live Sniper • Alle Bilder & Details"},
-                "timestamp": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime())
-            }]
-        }
+        # Erstelle das Embed-Objekt korrekt
+        embed = discord.Embed(
+            title=f"🔥 {item.get('title')}",
+            url=item_url,
+            color=0x09b1ba,
+            timestamp=discord.utils.utcnow()
+        )
+        
+        embed.add_field(name="💶 Preis", value=f"**{price_val:.2f} €**", inline=True)
+        embed.add_field(name="🚚 Gesamt ca.", value=f"**{total_price:.2f} €**", inline=True)
+        embed.add_field(name="📏 Größe", value=item.get('size_title', 'N/A'), inline=True)
+        embed.add_field(name="🏷️ Marke", value=brand, inline=True)
+        embed.add_field(name="✨ Zustand", value=status, inline=True)
+        embed.add_field(name="⏰ Gefunden", value=f"<t:{int(time.time())}:R>", inline=True)
+        embed.add_field(name="⚡ Aktionen", value=f"[🛒 Kaufen](https://www.vinted.de/transaction/buy/new?item_id={item_id}) | [💬 Nachricht]({item_url}#message)", inline=False)
+
+        # Bild hinzufügen, falls vorhanden
+        if main_img:
+            embed.set_image(url=main_img)
+
+        embed.set_footer(text="Live Sniper • Alle Bilder & Details")
 
         # Hole den Channel mit der gespeicherten Channel-ID
         channel = bot.get_channel(int(self.channel_id))  # Channel-ID als Integer umwandeln
         if channel:
-            await channel.send(embed=data)
+            await channel.send(embed=embed)
         else:
             print(f"❌ Fehler: Channel mit ID {self.channel_id} nicht gefunden!")
 
@@ -175,11 +176,5 @@ async def on_ready():
         # Starte Sniper in einem separaten Task, um den Bot nicht zu blockieren
         bot.loop.create_task(sniper.run(bot))
 
-# Hole das Token aus den Umgebungsvariablen
-token = os.getenv('DISCORD_BOT_TOKEN')
-
-if not token:
-    raise ValueError("Kein Token gefunden! Bitte stelle sicher, dass das Token als Umgebungsvariable gesetzt wurde.")
-
 # Starte den Bot
-bot.run(token)
+bot.run(os.getenv("DISCORD_TOKEN"))
