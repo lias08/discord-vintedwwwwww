@@ -1,5 +1,5 @@
 import discord
-from discord.ext import commands, tasks
+from discord.ext import commands
 import tls_client
 import time
 import json
@@ -100,7 +100,7 @@ class VintedSniper:
         else:
             print(f"❌ Fehler: Channel mit ID {self.channel_id} nicht gefunden!")
 
-    def run(self, bot):
+    async def run(self, bot):
         self.fetch_cookie()
         print(f"🎯 Sniper aktiv! Scan alle 10 Sek.")
         while True:
@@ -111,17 +111,17 @@ class VintedSniper:
                     for item in items:
                         if item["id"] not in self.seen_items:
                             if len(self.seen_items) > 0:
-                                asyncio.run(self.send_to_discord(item, bot))  # Nachrichten an den richtigen Channel senden
+                                await self.send_to_discord(item, bot)  # Direkter await-Aufruf, kein asyncio.run
                                 print(f"✅ NEU: {item.get('title')}")
                             self.seen_items.append(item["id"])
                     if len(self.seen_items) > 500: self.seen_items = self.seen_items[-200:]
                 elif response.status_code == 403:
                     print("⚠️ Blockiert! Warte 2 Min...")
-                    time.sleep(120)
-                time.sleep(10)
+                    await asyncio.sleep(120)  # Asynchron warten
+                await asyncio.sleep(10)  # Asynchron warten
             except Exception as e:
                 print(f"❌ Fehler: {e}")
-                time.sleep(10)
+                await asyncio.sleep(10)  # Asynchron warten
 
     def fetch_cookie(self):
         print("[*] Verbindung wird aufgebaut...")
@@ -132,26 +132,19 @@ class VintedSniper:
 # ==========================================
 # Discord Bot Setup
 # ==========================================
-
 intents = discord.Intents.default()
 intents.message_content = True
 
-bot = commands.Bot(command_prefix="/", intents=intents)
+bot = commands.Bot(command_prefix="!", intents=intents)  # Prefix für traditionelle Befehle anpassen
 
-@bot.event
-async def on_ready():
-    print(f'Bot ist eingeloggt als {bot.user}')
-
-    # Automatisches Starten des Snipers für gespeicherte URLs in allen Channels
-    for channel_id, data in channels_data.items():
-        url = data['url']
-        print(f"Starte VintedSniper für Channel {channel_id} mit URL {url}")
-        sniper = VintedSniper(url, channel_id)
-        asyncio.create_task(sniper.run(bot))
-
-@bot.command()
+# Der Startscan-Befehl als normaler Bot-Befehl
+@bot.command(name="startscan")
 async def startscan(ctx, url: str):
     """Startet den Scan für die angegebene URL im aktuellen Kanal."""
+    if not url:
+        await ctx.send("❌ Bitte gib eine URL an!")
+        return
+    
     channel_id = str(ctx.channel.id)
     
     # URL für den Kanal speichern
@@ -165,7 +158,22 @@ async def startscan(ctx, url: str):
     
     # VintedSniper für den aktuellen Channel starten
     sniper = VintedSniper(url, channel_id)
-    asyncio.create_task(sniper.run(bot))
+    
+    # Starte Sniper in einem separaten Task, um den Bot nicht zu blockieren
+    bot.loop.create_task(sniper.run(bot))
 
-# Bot starten
-bot.run(os.getenv('DISCORD_TOKEN'))  # Dein Discord Bot Token wird als Umgebungsvariable gesetzt
+@bot.event
+async def on_ready():
+    print(f'Bot ist eingeloggt als {bot.user}')
+
+    # Automatisches Starten des Snipers für gespeicherte URLs in allen Channels
+    for channel_id, data in channels_data.items():
+        url = data['url']
+        print(f"Starte VintedSniper für Channel ID {channel_id} mit URL {url}")
+        sniper = VintedSniper(url, channel_id)
+        
+        # Starte Sniper in einem separaten Task, um den Bot nicht zu blockieren
+        bot.loop.create_task(sniper.run(bot))
+
+# Starte den Bot
+bot.run("DEIN_DISCORD_BOT_TOKEN")
