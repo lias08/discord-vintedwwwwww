@@ -174,11 +174,11 @@ async def on_ready():
         print(f"Starte VintedSniper für Channel ID {channel_id} mit URL {url}")
         sniper = VintedSniper(url, channel_id)
         
-        # Starte Sniper in einem separaten Task
+        # Starte Sniper in einem separaten Task für jeden Channel
         tasks.append(bot.loop.create_task(sniper.run(bot)))
-
-    # Warten, dass alle Tasks gestartet werden
+    
+    # Warten, bis alle Tasks abgeschlossen sind (oder abgebrochen)
     await asyncio.gather(*tasks)
 
 # Starte den Bot
-bot.run
+bot.run(os.getenv("DISCORD_TOKEN"))
